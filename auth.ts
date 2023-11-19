@@ -5,6 +5,7 @@ import { sql } from '@vercel/postgres';
 import { z } from 'zod';
 import type { User } from '@/app/lib/definitions';
 import bcrypt from 'bcrypt';
+import GithubProvider from 'next-auth/providers/github';
 
 async function getUser(email: string): Promise<User | undefined> {
   try {
@@ -20,6 +21,10 @@ async function getUser(email: string): Promise<User | undefined> {
 export const { signOut, signIn, auth } = NextAuth({
   ...authConfig,
   providers: [
+    GithubProvider({
+      clientId: process.env.GITHUB_ID,
+      clientSecret: process.env.GITHUB_SECRET,
+    }),
     Credentials({
       async authorize(credentials) {
         const parsedCredentials = z
@@ -40,21 +45,22 @@ export const { signOut, signIn, auth } = NextAuth({
       },
     }),
   ],
-  // callbacks: {
-  //   async jwt({ token, user }) {
-  //     if (user) {
-  //       token.user = user;
-  //     }
-  //     console.log('token', token);
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.user = user;
+      }
+      console.log('token', token);
 
-  //     return token;
-  //   },
-  //   async session({ session, token }) {
-  //     let user = session.user as User;
-  //     if (token?.user) {
-  //       user = token.user as User;
-  //     }
-  //     return { ...session, user: { email: user?.email, name: user?.name } };
-  //   },
-  // },
+      return token;
+    },
+    async session({ session, token }) {
+      let user = session.user as User;
+      if (token?.user) {
+        user = token.user as User;
+      }
+      return { ...session, user: { email: user?.email, name: user?.name } };
+    },
+  },
+  secret: process.env.AUTH_SECRET,
 });
