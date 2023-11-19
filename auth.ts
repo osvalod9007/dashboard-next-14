@@ -50,7 +50,6 @@ export const { signOut, signIn, auth } = NextAuth({
       if (user) {
         token.user = user;
       }
-      console.log('token', token);
 
       return token;
     },
